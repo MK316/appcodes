@@ -7,18 +7,19 @@ from gtts import gTTS
 st.set_page_config(page_title="Sentence TTS Highlighter", layout="wide")
 
 st.title("Sentence TTS Highlighter")
-st.caption("Paste a passage, select a sentence, play its audio, and see where it appears in the full text.")
+st.caption("Paste a passage, click the button, then select a sentence to play and locate it in the full text.")
+
+# ---------- Session state ----------
+if "ready" not in st.session_state:
+    st.session_state.ready = False
 
 # ---------- Functions ----------
 def split_into_sentences(text: str):
     text = text.strip()
     if not text:
         return []
-
-    # Split by sentence-ending punctuation while keeping the punctuation
     parts = re.split(r'(?<=[.!?])\s+', text)
-    sentences = [p.strip() for p in parts if p.strip()]
-    return sentences
+    return [p.strip() for p in parts if p.strip()]
 
 def make_label(idx: int, sentence: str, max_words: int = 5):
     words = sentence.split()
@@ -36,7 +37,6 @@ def highlight_selected_sentence(full_text: str, selected_sentence: str):
         f"<mark style='background-color: #fff3a3; padding: 0.1em 0.2em; border-radius: 4px;'>{escaped_selected}</mark>",
         1
     )
-
     highlighted = highlighted.replace("\n", "<br>")
     return highlighted
 
@@ -71,8 +71,18 @@ lang_settings = {
     "Japanese": ("ja", None),
 }
 
+# ---------- Button ----------
+generate_button = st.button("Generate audio options")
+
+if generate_button:
+    if text_input.strip():
+        st.session_state.ready = True
+    else:
+        st.session_state.ready = False
+        st.warning("Please paste a passage first.")
+
 # ---------- Main ----------
-if text_input.strip():
+if st.session_state.ready and text_input.strip():
     sentences = split_into_sentences(text_input)
 
     if sentences:
@@ -125,5 +135,6 @@ if text_input.strip():
 
     else:
         st.warning("No sentences were detected. Please check the text.")
-else:
+
+elif not text_input.strip():
     st.info("Paste a passage above to begin.")
