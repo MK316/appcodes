@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Score Checker", layout="wide")
 
-st.title("📘 S26 Midterm Score Checker")
+st.title("🍰 S26 Midterm Score Checker")
 st.caption("You need your email address and passcode you'd provided for the exam.")
 
 DATASETS = {
