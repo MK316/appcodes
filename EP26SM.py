@@ -94,18 +94,22 @@ if st.button("Show Overall Performance"):
     st.write(f"**Upper 10% cutoff:** {upper_10_cutoff:.2f}")
 
     # 1. Dot plot ordered by score
+    # 1. Dot plot ordered by score
     st.markdown("### Dot Plot: Individual Scores Ordered by Score")
-
-    sorted_data = data.sort_values("Score").reset_index(drop=True)
-
+    
+    sorted_data = data.sort_values("Score", ascending=False).reset_index(drop=True)
+    
     fig1, ax1 = plt.subplots(figsize=(10, 4))
-    ax1.scatter(sorted_data["Score"], range(1, len(sorted_data) + 1))
-    ax1.axvline(upper_10_cutoff, linestyle="--", label="Upper 10% cutoff")
-    ax1.axvline(median_score, linestyle="--", label="Median")
-    ax1.set_xlabel("Score")
-    ax1.set_ylabel("Students ordered by score")
-    ax1.set_title("Individual Scores Ordered by Score")
+    ax1.scatter(range(1, len(sorted_data) + 1), sorted_data["Score"])
+    
+    ax1.axhline(upper_10_cutoff, linestyle="--", label="Upper 10% cutoff")
+    ax1.axhline(median_score, color="red", linestyle="--", label="Median")
+    
+    ax1.set_xlabel("Students ordered from highest to lowest score")
+    ax1.set_ylabel("Score")
+    ax1.set_title("Individual Scores Ordered from Highest to Lowest")
     ax1.legend()
+    
     st.pyplot(fig1)
 
     # 2. Boxplot
