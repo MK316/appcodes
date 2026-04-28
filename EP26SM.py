@@ -94,7 +94,6 @@ if st.button("Show Overall Performance"):
     st.write(f"**Upper 10% cutoff:** {upper_10_cutoff:.2f}")
 
     # 1. Dot plot ordered by score
-    # 1. Dot plot ordered by score
     st.markdown("### Dot Plot: Individual Scores Ordered by Score")
     
     sorted_data = data.sort_values("Score", ascending=False).reset_index(drop=True)
@@ -107,6 +106,7 @@ if st.button("Show Overall Performance"):
     
     ax1.set_xlabel("Students ordered from highest to lowest score")
     ax1.set_ylabel("Score")
+    ax1.set_ylim(0, 210)
     ax1.set_title("Individual Scores Ordered from Highest to Lowest")
     ax1.legend()
     
