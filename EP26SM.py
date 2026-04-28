@@ -56,8 +56,16 @@ def get_performance_level(score, df):
 # -----------------------------
 st.subheader("Check Your Score")
 
-email_input = st.text_input("Email").strip().lower()
-passcode_input = st.text_input("Passcode", type="password").strip()
+email_input = st.text_input(
+    "Email",
+    placeholder="example: student123@university.ac.kr"
+).strip().lower()
+
+passcode_input = st.text_input(
+    "Passcode",
+    type="password",
+    placeholder="example: KMR1234"
+).strip()
 
 if st.button("Check My Score"):
     matched = data[
