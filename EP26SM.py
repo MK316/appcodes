@@ -2,18 +2,25 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Midterm Score Checker", layout="wide")
+st.set_page_config(page_title="Score Checker", layout="wide")
 
-st.title("📘 Midterm Score Checker")
-st.caption("Enter your email and passcode to check your midterm score.")
+st.title("📘 Score Checker")
 
-CSV_URL = "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SEPM.csv"
+DATASETS = {
+    "Engpro": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SEPM.csv",
+    "Phonetics": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SEPM.csv"
+}
+
+dataset_name = st.selectbox("Select dataset:", list(DATASETS.keys()))
+CSV_URL = DATASETS[dataset_name]
 
 @st.cache_data
 def load_data(url):
     return pd.read_csv(url)
 
 data = load_data(CSV_URL)
+
+st.caption(f"Current dataset: {dataset_name}")
 
 required_columns = ["Email", "Passcode", "Score", "Group"]
 missing_columns = [col for col in required_columns if col not in data.columns]
