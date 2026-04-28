@@ -2,3 +2,4 @@ streamlit
 gTTS
 pytz
 matplotlib
+pandas
