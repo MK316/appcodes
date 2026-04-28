@@ -136,16 +136,37 @@ if st.button("Show Overall Performance"):
 
     # 4. Boxplots by group
     st.markdown("### Boxplots by Group")
-
-    group_order = sorted(data["Group"].dropna().unique())
+    
+    # Sort groups numerically: G1, G2, G3, ...
+    group_order = sorted(
+        data["Group"].dropna().unique(),
+        key=lambda x: int(str(x).replace("G", "").strip())
+    )
+    
     group_scores = [
         data[data["Group"] == group]["Score"].dropna()
         for group in group_order
     ]
-
+    
+    pastel_colors = [
+        "#FADADD", "#D8E2DC", "#FFE5B4", "#CDE7F0",
+        "#E4D7F5", "#D5F5E3", "#F9E79F", "#F5CBA7"
+    ]
+    
     fig4, ax4 = plt.subplots(figsize=(10, 5))
-    ax4.boxplot(group_scores, labels=group_order)
+    
+    box = ax4.boxplot(
+        group_scores,
+        labels=group_order,
+        patch_artist=True
+    )
+    
+    for patch, color in zip(box["boxes"], pastel_colors):
+        patch.set_facecolor(color)
+    
     ax4.set_xlabel("Group")
     ax4.set_ylabel("Score")
+    ax4.set_ylim(0, 210)
     ax4.set_title("Score Distribution by Group")
+    
     st.pyplot(fig4)
