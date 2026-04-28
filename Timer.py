@@ -1,77 +1,11 @@
 import streamlit as st
-import time
-import pytz
-from datetime import datetime
-import matplotlib.pyplot as plt
+import streamlit.components.v1 as components
+import base64
+from pathlib import Path
 
 st.set_page_config(page_title="MK316 Customized Timer", layout="centered")
 
-# ---------- Session State ----------
-if "running" not in st.session_state:
-    st.session_state.running = False
-if "end_time" not in st.session_state:
-    st.session_state.end_time = None
-if "total_time" not in st.session_state:
-    st.session_state.total_time = 10
-if "time_up" not in st.session_state:
-    st.session_state.time_up = False
-
-# ---------- Functions ----------
-def get_seoul_time():
-    seoul_tz = pytz.timezone("Asia/Seoul")
-    return datetime.now(seoul_tz).strftime("%H:%M:%S")
-
-def draw_progress_circle(remaining_time, total_time, time_up=False):
-    fig, ax = plt.subplots(figsize=(2.3, 2.3))
-
-    if time_up:
-        ax.pie(
-            [1],
-            colors=["#6d8c9c"],
-            startangle=90,
-            counterclock=False,
-            wedgeprops=dict(width=0.25)
-        )
-        ax.text(0, 0, "Time's Up!", fontsize=12, ha="center", va="center", color="gray")
-    else:
-        fraction = remaining_time / total_time if total_time > 0 else 0
-        ax.pie(
-            [fraction, 1 - fraction],
-            colors=["#5785A4", "#D5DEDD"],
-            startangle=90,
-            counterclock=False,
-            wedgeprops=dict(width=0.3)
-        )
-
-        minutes, seconds = divmod(int(remaining_time), 60)
-        ax.text(0, 0, f"{minutes:02d}:{seconds:02d}", fontsize=14, ha="center", va="center")
-
-    ax.set_aspect("equal")
-    ax.axis("off")
-    return fig
-
-def start_timer(seconds):
-    st.session_state.total_time = seconds
-    st.session_state.end_time = time.time() + seconds
-    st.session_state.running = True
-    st.session_state.time_up = False
-
-def reset_timer():
-    st.session_state.running = False
-    st.session_state.end_time = None
-    st.session_state.time_up = False
-
-# ---------- UI ----------
 st.title("🐧 MK316 Customized Timer")
-
-st.markdown(
-    f"""
-    <h2 style='text-align:center; font-size:60px; color:#5785A4;'>
-        {get_seoul_time()}
-    </h2>
-    """,
-    unsafe_allow_html=True
-)
 
 seconds = st.number_input(
     "Set Countdown Time (in seconds)",
@@ -80,52 +14,166 @@ seconds = st.number_input(
     value=10
 )
 
-col1, col2 = st.columns([2, 1])
+# Optional audio file
+audio_html = ""
+audio_path = Path("timesup.mp3")
 
-with col1:
-    start_col, reset_col = st.columns(2)
+if audio_path.exists():
+    audio_bytes = audio_path.read_bytes()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    audio_html = f"""
+    <audio id="alarmSound">
+        <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+    </audio>
+    """
 
-    with start_col:
-        if st.button("Start"):
-            start_timer(seconds)
+components.html(
+    f"""
+    <div style="text-align:center; font-family:Arial, sans-serif;">
 
-    with reset_col:
-        if st.button("Reset"):
-            reset_timer()
+        <h3>Current Time in Korea</h3>
 
-with col2:
-    progress_placeholder = st.empty()
+        <div id="clock" style="
+            font-size:60px;
+            font-weight:700;
+            color:#5785A4;
+            margin-bottom:25px;">
+        </div>
 
-message_placeholder = st.empty()
+        <svg width="230" height="230" viewBox="0 0 230 230">
+            <circle
+                cx="115" cy="115" r="90"
+                stroke="#D5DEDD"
+                stroke-width="22"
+                fill="none"
+            />
+            <circle
+                id="progressCircle"
+                cx="115" cy="115" r="90"
+                stroke="#5785A4"
+                stroke-width="22"
+                fill="none"
+                stroke-linecap="round"
+                transform="rotate(-90 115 115)"
+            />
+            <text
+                id="timerText"
+                x="115" y="123"
+                text-anchor="middle"
+                font-size="28"
+                font-weight="700"
+                fill="#333">
+                00:00
+            </text>
+        </svg>
 
-# ---------- Timer Logic ----------
-if st.session_state.running:
-    remaining_time = max(0, int(st.session_state.end_time - time.time()))
+        <div style="margin-top:20px;">
+            <button onclick="startTimer()" style="
+                font-size:18px;
+                padding:10px 24px;
+                margin-right:10px;
+                border-radius:8px;
+                border:1px solid #ccc;
+                cursor:pointer;">
+                Start
+            </button>
 
-    if remaining_time > 0:
-        fig = draw_progress_circle(remaining_time, st.session_state.total_time)
-        progress_placeholder.pyplot(fig)
+            <button onclick="resetTimer()" style="
+                font-size:18px;
+                padding:10px 24px;
+                border-radius:8px;
+                border:1px solid #ccc;
+                cursor:pointer;">
+                Reset
+            </button>
+        </div>
 
-        minutes, seconds_left = divmod(remaining_time, 60)
-        message_placeholder.write(f"**Remaining Time:** {minutes:02d}:{seconds_left:02d}")
+        <p id="message" style="
+            font-size:22px;
+            font-weight:700;
+            color:#666;
+            margin-top:20px;">
+        </p>
 
-        time.sleep(1)
-        st.rerun()
+        {audio_html}
+    </div>
 
-    else:
-        st.session_state.running = False
-        st.session_state.time_up = True
+    <script>
+        const totalTime = {seconds};
+        let remainingTime = totalTime;
+        let timerInterval = null;
 
-if st.session_state.time_up:
-    fig = draw_progress_circle(0, st.session_state.total_time, time_up=True)
-    progress_placeholder.pyplot(fig)
-    message_placeholder.success("⏰ Time's Up!")
+        const circle = document.getElementById("progressCircle");
+        const radius = 90;
+        const circumference = 2 * Math.PI * radius;
 
-    try:
-        with open("timesup.mp3", "rb") as audio_file:
-            st.audio(audio_file.read(), format="audio/mp3")
-    except FileNotFoundError:
-        st.warning("timesup.mp3 file was not found. Please upload it to the app folder.")
-else:
-    fig = draw_progress_circle(st.session_state.total_time, st.session_state.total_time)
-    progress_placeholder.pyplot(fig)
+        circle.style.strokeDasharray = circumference;
+        circle.style.strokeDashoffset = 0;
+
+        function formatTime(seconds) {{
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return String(min).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+        }}
+
+        function updateClock() {{
+            const now = new Date();
+            const koreaTime = new Intl.DateTimeFormat("en-GB", {{
+                timeZone: "Asia/Seoul",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            }}).format(now);
+
+            document.getElementById("clock").innerHTML = koreaTime;
+        }}
+
+        function updateTimerDisplay() {{
+            document.getElementById("timerText").textContent = formatTime(remainingTime);
+
+            const progress = remainingTime / totalTime;
+            circle.style.strokeDashoffset = circumference * (1 - progress);
+        }}
+
+        function startTimer() {{
+            if (timerInterval !== null) return;
+
+            document.getElementById("message").textContent = "";
+
+            timerInterval = setInterval(() => {{
+                remainingTime -= 1;
+                updateTimerDisplay();
+
+                if (remainingTime <= 0) {{
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    remainingTime = 0;
+                    updateTimerDisplay();
+
+                    document.getElementById("timerText").textContent = "Done";
+                    document.getElementById("message").textContent = "⏰ Time's Up!";
+
+                    const alarm = document.getElementById("alarmSound");
+                    if (alarm) {{
+                        alarm.play();
+                    }}
+                }}
+            }}, 1000);
+        }}
+
+        function resetTimer() {{
+            clearInterval(timerInterval);
+            timerInterval = null;
+            remainingTime = totalTime;
+            document.getElementById("message").textContent = "";
+            updateTimerDisplay();
+        }}
+
+        updateClock();
+        setInterval(updateClock, 1000);
+        updateTimerDisplay();
+    </script>
+    """,
+    height=560
+)
