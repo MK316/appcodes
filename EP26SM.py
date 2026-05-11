@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
 
 # -----------------------------
 # Page setup
@@ -15,7 +16,7 @@ st.caption("Select your course and check your score using the required informati
 # -----------------------------
 DATASETS = {
     "Engpro": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SEPM.csv",
-    "Phonetics": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SPhoneticsMidterm.csv"  # Update later
+    "Phonetics": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SPhoneticsMidterm.csv"  # Update later if needed
 }
 
 dataset_name = st.selectbox("Select dataset:", list(DATASETS.keys()))
@@ -26,7 +27,8 @@ CSV_URL = DATASETS[dataset_name]
 # -----------------------------
 @st.cache_data
 def load_data(url):
-    return pd.read_csv(url)
+    # dtype=str helps preserve Passcode and SID formats
+    return pd.read_csv(url, dtype=str)
 
 data = load_data(CSV_URL)
 
@@ -59,6 +61,10 @@ if dataset_name == "Phonetics":
     data["Names"] = data["Names"].astype(str).str.strip()
     data["SID"] = data["SID"].astype(str).str.strip()
 
+    # Ignore leading OOOOO and match only the 5 digits after it.
+    # This also works if the SID has other non-digit characters.
+    data["SID_5"] = data["SID"].str.extract(r"(\d{5})$", expand=False)
+
     data["Written"] = pd.to_numeric(data["Written"], errors="coerce")
     data["Transcription"] = pd.to_numeric(data["Transcription"], errors="coerce")
     data["Total"] = pd.to_numeric(data["Total"], errors="coerce")
@@ -72,11 +78,13 @@ else:
     score_column = "Score"
 
 # Remove rows with invalid score
-data = data.dropna(subset=[score_column])
+data = data.dropna(subset=[score_column]).copy()
 
 # -----------------------------
-# Score category
+# Rank and performance category
 # -----------------------------
+data["Rank"] = data[score_column].rank(method="min", ascending=False).astype(int)
+
 def get_performance_level(score, df, score_col):
     upper_10_cutoff = df[score_col].quantile(0.90)
     median_cutoff = df[score_col].quantile(0.50)
@@ -96,8 +104,11 @@ st.subheader("Check Your Score")
 if dataset_name == "Phonetics":
     sid_input = st.text_input(
         "SID",
-        placeholder="Type your student ID"
+        placeholder="Type only the 5 digits after OOOOO"
     ).strip()
+
+    # Keep digits only from user input
+    sid_input_clean = re.sub(r"\D", "", sid_input)[-5:]
 
     passcode_input = st.text_input(
         "Passcode",
@@ -123,11 +134,11 @@ else:
 if st.button("Check My Score"):
 
     if dataset_name == "Phonetics":
-        sid_matched = data[data["SID"] == sid_input]
+        sid_matched = data[data["SID_5"] == sid_input_clean]
         passcode_matched = data[data["Passcode"] == passcode_input]
 
         both_matched = data[
-            (data["SID"] == sid_input) &
+            (data["SID_5"] == sid_input_clean) &
             (data["Passcode"] == passcode_input)
         ]
 
@@ -145,16 +156,18 @@ if st.button("Check My Score"):
             student = both_matched.iloc[0]
             total_score = student["Total"]
             performance_level = get_performance_level(total_score, data, score_column)
+            total_students = len(data)
 
             st.success("Your record was found.")
             st.markdown("### Your Result")
 
             st.write(f"**Name:** {student['Names']}")
-            st.write(f"**SID:** {student['SID']}")
+            st.write(f"**SID:** {student['SID_5']}")
             st.write(f"**Group:** {student['Group']}")
             st.write(f"**Written Exam Score:** {student['Written']:.2f}")
             st.write(f"**Transcription Score:** {student['Transcription']:.2f}")
             st.write(f"**Total Score:** {student['Total']:.2f} / 100")
+            st.write(f"**Rank:** {student['Rank']} out of {total_students}")
             st.write(f"**Performance Level:** {performance_level}")
 
     else:
@@ -180,11 +193,13 @@ if st.button("Check My Score"):
             student = both_matched.iloc[0]
             student_score = student["Score"]
             performance_level = get_performance_level(student_score, data, score_column)
+            total_students = len(data)
 
             st.success("Your record was found.")
             st.markdown("### Your Result")
 
             st.write(f"**Score:** {student_score:.2f}")
+            st.write(f"**Rank:** {student['Rank']} out of {total_students}")
             st.write(f"**Performance Level:** {performance_level}")
 
 # -----------------------------
@@ -213,9 +228,9 @@ if st.button("Show Overall Performance"):
     st.markdown("## Overall Performance")
 
     if dataset_name == "Phonetics":
-        st.caption("Performance statistics and plots are based on the Total score.")
+        st.caption("Performance statistics, rank, and plots are based on the Total score.")
     else:
-        st.caption("Performance statistics and plots are based on the Score column.")
+        st.caption("Performance statistics, rank, and plots are based on the Score column.")
 
     st.write(f"**Mean:** {mean_score:.2f}")
     st.write(f"**Median:** {median_score:.2f}")
