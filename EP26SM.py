@@ -86,12 +86,21 @@ data = data.dropna(subset=[score_column]).copy()
 data["Rank"] = data[score_column].rank(method="min", ascending=False).astype(int)
 
 def get_performance_level(score, df, score_col):
-    upper_10_cutoff = df[score_col].quantile(0.90)
-    median_cutoff = df[score_col].quantile(0.50)
+    q90 = df[score_col].quantile(0.90)
+    q80 = df[score_col].quantile(0.80)
+    q70 = df[score_col].quantile(0.70)
+    q60 = df[score_col].quantile(0.60)
+    q50 = df[score_col].quantile(0.50)
 
-    if score >= upper_10_cutoff:
+    if score >= q90:
         return "Upper 10%"
-    elif score >= median_cutoff:
+    elif score >= q80:
+        return "Upper 20%"
+    elif score >= q70:
+        return "Upper 30%"
+    elif score >= q60:
+        return "Upper 40%"
+    elif score >= q50:
         return "Upper 50%"
     else:
         return "Lower 50%"
