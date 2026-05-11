@@ -87,7 +87,7 @@ st.subheader("Check Your Score")
 
 if dataset_name == "Phonetics":
     email_id_input = st.text_input(
-        "Email ID",
+        "Email ID (account ID only; e.g., accountID@gmail.com)",
         placeholder="Type only the part before @"
     ).strip().lower()
 
@@ -106,7 +106,7 @@ else:
     passcode_input = st.text_input(
         "Passcode",
         type="password",
-        placeholder="example: KMR1234"
+        placeholder="example: KMR1234 as you provided in the test form."
     ).strip()
 
 # -----------------------------
@@ -114,7 +114,7 @@ else:
 # -----------------------------
 if st.button("Check My Score"):
 
-    if dataset_name == "Phonetics":
+    if dataset_name == "English Phonetics":
         email_matched = data[data["Email_ID"] == email_id_input]
         passcode_matched = data[data["Passcode"] == passcode_input]
 
