@@ -167,7 +167,7 @@ if st.button("Check My Score"):
             st.write(f"**Written Exam Score:** {student['Written']:.2f}")
             st.write(f"**Transcription Score:** {student['Transcription']:.2f}")
             st.write(f"**Total Score:** {student['Total']:.2f} / 100")
-            st.write(f"**Rank:** {student['Rank']} out of {total_students}")
+            #st.write(f"**Rank:** {student['Rank']} out of {total_students}")
             st.write(f"**Performance Level:** {performance_level}")
 
     else:
