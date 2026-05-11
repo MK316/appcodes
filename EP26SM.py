@@ -2,17 +2,20 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# -----------------------------
+# Page setup
+# -----------------------------
 st.set_page_config(page_title="Score Checker", layout="wide")
 
 st.title("🍰 S26 Midterm Score Checker")
-st.caption("You need your email ID and passcode you'd provided for the exam.")
+st.caption("You need your email address or email ID and passcode you provided for the exam.")
 
 # -----------------------------
 # Dataset links
 # -----------------------------
 DATASETS = {
     "Engpro": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SEPM.csv",
-    "Phonetics": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SPhonM.csv"  # Update later
+    "Phonetics": "https://raw.githubusercontent.com/MK316/appcodes/refs/heads/main/26SPhonM.csv"
 }
 
 dataset_name = st.selectbox("Select dataset:", list(DATASETS.keys()))
@@ -60,6 +63,7 @@ if "SID" in data.columns:
 # Email ID = part before @
 data["Email_ID"] = data["Email"].str.split("@").str[0]
 
+# Remove rows with invalid score
 data = data.dropna(subset=["Score"])
 
 # -----------------------------
@@ -144,15 +148,15 @@ if st.button("Check My Score"):
             st.write(f"**Performance Level:** {performance_level}")
 
     else:
-        matched = data[
+        email_matched = data[data["Email"] == email_input]
+        passcode_matched = data[data["Passcode"] == passcode_input]
+
+        both_matched = data[
             (data["Email"] == email_input) &
             (data["Passcode"] == passcode_input)
         ]
 
-        if matched.empty:
-            email_matched = data[data["Email"] == email_input]
-            passcode_matched = data[data["Passcode"] == passcode_input]
-
+        if both_matched.empty:
             if email_matched.empty and passcode_matched.empty:
                 st.error("Both Email and Passcode do not match.")
             elif email_matched.empty:
@@ -163,7 +167,7 @@ if st.button("Check My Score"):
                 st.error("Email and Passcode do not match the same record.")
 
         else:
-            student = matched.iloc[0]
+            student = both_matched.iloc[0]
             student_score = student["Score"]
             performance_level = get_performance_level(student_score, data)
 
@@ -187,6 +191,14 @@ if st.button("Show Overall Performance"):
     score_range = max_score - min_score
     upper_10_cutoff = scores.quantile(0.90)
 
+    # -----------------------------
+    # Axis range by dataset
+    # -----------------------------
+    if dataset_name == "Phonetics":
+        y_min, y_max = 20, 80
+    else:
+        y_min, y_max = 0, 210
+
     st.markdown("## Overall Performance")
 
     st.write(f"**Mean:** {mean_score:.2f}")
@@ -196,7 +208,9 @@ if st.button("Show Overall Performance"):
     st.write(f"**Range:** {score_range:.2f}")
     st.write(f"**Upper 10% cutoff:** {upper_10_cutoff:.2f}")
 
+    # -----------------------------
     # 1. Dot plot ordered by score
+    # -----------------------------
     st.markdown("### Dot Plot: Individual Scores Ordered by Score")
 
     sorted_data = data.sort_values("Score", ascending=False).reset_index(drop=True)
@@ -209,35 +223,47 @@ if st.button("Show Overall Performance"):
 
     ax1.set_xlabel("Students ordered from highest to lowest score")
     ax1.set_ylabel("Score")
-    ax1.set_ylim(0, max(210, max_score + 10))
+    ax1.set_ylim(y_min, y_max)
     ax1.set_title("Individual Scores Ordered from Highest to Lowest")
     ax1.legend()
 
     st.pyplot(fig1)
 
+    # -----------------------------
     # 2. Boxplot
+    # -----------------------------
     st.markdown("### Boxplot of Scores")
 
     fig2, ax2 = plt.subplots(figsize=(8, 3))
     ax2.boxplot(scores, vert=False)
     ax2.set_xlabel("Score")
+    ax2.set_xlim(y_min, y_max)
     ax2.set_title("Score Distribution")
+
     st.pyplot(fig2)
 
+    # -----------------------------
     # 3. Histogram
+    # -----------------------------
     st.markdown("### Histogram of Scores")
 
     fig3, ax3 = plt.subplots(figsize=(8, 4))
     ax3.hist(scores, bins=10, edgecolor="black")
+
     ax3.axvline(mean_score, linestyle="--", label="Mean")
     ax3.axvline(median_score, linestyle="--", label="Median")
+
     ax3.set_xlabel("Score")
     ax3.set_ylabel("Frequency")
+    ax3.set_xlim(y_min, y_max)
     ax3.set_title("Histogram of Scores")
     ax3.legend()
+
     st.pyplot(fig3)
 
+    # -----------------------------
     # 4. Boxplots by group
+    # -----------------------------
     st.markdown("### Boxplots by Group")
 
     def sort_group_label(x):
@@ -277,7 +303,7 @@ if st.button("Show Overall Performance"):
 
     ax4.set_xlabel("Group")
     ax4.set_ylabel("Score")
-    ax4.set_ylim(0, max(210, max_score + 10))
+    ax4.set_ylim(y_min, y_max)
     ax4.set_title("Score Distribution by Group")
 
     st.pyplot(fig4)
