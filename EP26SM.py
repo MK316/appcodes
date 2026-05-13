@@ -55,6 +55,10 @@ if missing_columns:
 # Data cleaning
 # -----------------------------
 data["Passcode"] = data["Passcode"].astype(str).str.strip()
+
+# Case-insensitive passcode matching
+data["Passcode_clean"] = data["Passcode"].str.lower()
+
 data["Group"] = data["Group"].astype(str).str.strip()
 
 if dataset_name == "Phonetics":
@@ -137,6 +141,9 @@ else:
         placeholder="Type your passcode"
     ).strip()
 
+# Clean passcode input for case-insensitive matching
+passcode_input_clean = passcode_input.lower()
+
 # -----------------------------
 # Check button
 # -----------------------------
@@ -144,11 +151,11 @@ if st.button("Check My Score"):
 
     if dataset_name == "Phonetics":
         sid_matched = data[data["SID_5"] == sid_input_clean]
-        passcode_matched = data[data["Passcode"] == passcode_input]
+        passcode_matched = data[data["Passcode_clean"] == passcode_input_clean]
 
         both_matched = data[
             (data["SID_5"] == sid_input_clean) &
-            (data["Passcode"] == passcode_input)
+            (data["Passcode_clean"] == passcode_input_clean)
         ]
 
         if both_matched.empty:
@@ -176,16 +183,16 @@ if st.button("Check My Score"):
             st.write(f"**Written Exam Score:** {student['Written']:.2f}")
             st.write(f"**Transcription Score:** {student['Transcription']:.2f}")
             st.write(f"**Total Score:** {student['Total']:.2f} / 100")
-            #st.write(f"**Rank:** {student['Rank']} out of {total_students}")
+            # st.write(f"**Rank:** {student['Rank']} out of {total_students}")
             st.write(f"**Performance Level:** {performance_level}")
 
     else:
         email_matched = data[data["Email"] == email_input]
-        passcode_matched = data[data["Passcode"] == passcode_input]
+        passcode_matched = data[data["Passcode_clean"] == passcode_input_clean]
 
         both_matched = data[
             (data["Email"] == email_input) &
-            (data["Passcode"] == passcode_input)
+            (data["Passcode_clean"] == passcode_input_clean)
         ]
 
         if both_matched.empty:
